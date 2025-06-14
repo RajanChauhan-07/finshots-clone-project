@@ -1,29 +1,29 @@
 // backend/index.js
 
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose'); // Import Mongoose
-require('dotenv').config(); // Load environment variables from .env file
+const mongoose = require('mongoose');
 
 const articlesData = require('./data'); // Our mock data, for seeding only
 
 const app = express();
 const port = 3000;
 
-// Middleware
 app.use(cors());
-app.use(express.json()); // Enable parsing JSON request bodies (for future use like adding articles)
+app.use(express.json());
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI; // Get URI from environment variables
+const MONGODB_URI = process.env.MONGODB_URI;
 
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(MONGODB_URI)
   .then(() => console.log('MongoDB connected successfully!'))
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Define Article Schema and Model
 const articleSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true }, // Keeping 'id' for consistency with frontend
+  id: { type: String, required: true, unique: true },
   title: String,
   summary: String,
   body: String,
@@ -33,7 +33,7 @@ const articleSchema = new mongoose.Schema({
   imageUrl: String
 });
 
-const Article = mongoose.model('Article', articleSchema); // Create the Article Model
+const Article = mongoose.model('Article', articleSchema);
 
 // --- API Endpoints ---
 
@@ -42,14 +42,23 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Finshots Clone Backend API!');
 });
 
-// API endpoint to get all articles, with optional category filtering
+// API endpoint to get all articles, now with optional category AND search term filtering
 app.get('/api/articles', async (req, res) => {
   const category = req.query.category;
-  let query = {}; // Start with an empty query
+  const searchTerm = req.query.searchTerm; // Get the 'searchTerm' from query parameters
+
+  let query = {}; // Start with an empty query object
 
   if (category) {
-    // If category is provided, add it to the query (case-insensitive regex for flexibility)
-    query.category = { $regex: new RegExp(category, 'i') };
+    query.category = { $regex: new RegExp(category, 'i') }; // Case-insensitive category match
+  }
+
+  if (searchTerm) {
+    // If searchTerm is provided, add an OR condition to search in title or summary
+    query.$or = [
+      { title: { $regex: new RegExp(searchTerm, 'i') } }, // Case-insensitive title search
+      { summary: { $regex: new RegExp(searchTerm, 'i') } } // Case-insensitive summary search
+    ];
   }
 
   try {
@@ -61,10 +70,10 @@ app.get('/api/articles', async (req, res) => {
   }
 });
 
-// API endpoint to get a single article by ID
+// API endpoint to get a single article by ID (remains unchanged)
 app.get('/api/articles/:id', async (req, res) => {
   try {
-    const article = await Article.findOne({ id: req.params.id }); // Find by our custom 'id' field
+    const article = await Article.findOne({ id: req.params.id });
     if (article) {
       res.json(article);
     } else {
@@ -76,12 +85,10 @@ app.get('/api/articles/:id', async (req, res) => {
   }
 });
 
-// NEW: API endpoint to seed the database with initial articles
+// API endpoint to seed the database with initial articles (remains unchanged)
 app.post('/api/seed-articles', async (req, res) => {
   try {
-    // Clear existing articles to prevent duplicates on re-seeding
     await Article.deleteMany({});
-    // Insert new articles from our mock data
     await Article.insertMany(articlesData);
     res.status(201).json({ message: 'Database seeded successfully with initial articles!' });
   } catch (err) {
@@ -89,7 +96,6 @@ app.post('/api/seed-articles', async (req, res) => {
     res.status(500).json({ message: 'Error seeding database', error: err.message });
   }
 });
-
 
 // Start the server
 app.listen(port, () => {

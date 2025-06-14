@@ -1,31 +1,59 @@
 // frontend/src/App.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; // Removed useCallback, not strictly needed for this pattern
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import ArticleDetail from './ArticleDetail';
 import './App.css';
 import './ArticleDetail.css';
 
 
-// Component for listing articles with filtering
-// It now receives activeCategory and setActiveCategory as props
-function ArticleList({ activeCategory, setActiveCategory }) {
+// Component for listing articles with filtering and search
+function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchTerm }) {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Local state for the search input value, allowing immediate feedback
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
 
-  // Define our static categories.
   const categories = ['All', 'Economy', 'Startups', 'Fintech', 'Investments', 'ESG'];
 
+  // Effect 1: Sync localSearchTerm with prop.searchTerm when prop changes (e.g., from back navigation or category click)
+  useEffect(() => {
+    setLocalSearchTerm(searchTerm);
+  }, [searchTerm]);
+
+
+  // Effect 2: This is the debouncing logic for the actual API call
+  useEffect(() => {
+    // Set up a timer to update the parent's searchTerm state after a delay
+    const handler = setTimeout(() => {
+      setSearchTerm(localSearchTerm); // Update the parent's searchTerm prop
+    }, 300); // 300ms debounce delay
+
+    // Cleanup function: Clear the previous timeout if localSearchTerm changes before the delay
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [localSearchTerm, setSearchTerm]); // This effect runs when localSearchTerm or setSearchTerm changes
+
+
+  // Effect 3: Fetch articles based on activeCategory and the (debounced) searchTerm prop
+  // This is separated to ensure API call only happens when the *debounced* term is ready
   useEffect(() => {
     const fetchArticles = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const url = activeCategory
-          ? `http://localhost:3000/api/articles?category=${activeCategory}`
-          : 'http://localhost:3000/api/articles';
+        const urlParams = new URLSearchParams();
+        if (activeCategory) {
+          urlParams.append('category', activeCategory);
+        }
+        if (searchTerm) { // Use the prop searchTerm for the API call
+          urlParams.append('searchTerm', searchTerm);
+        }
+
+        const url = `http://localhost:3000/api/articles?${urlParams.toString()}`;
 
         const response = await fetch(url);
 
@@ -42,12 +70,24 @@ function ArticleList({ activeCategory, setActiveCategory }) {
       }
     };
 
+    // Trigger fetch only when activeCategory or the debounced searchTerm changes
     fetchArticles();
-  }, [activeCategory]); // Rerun this effect whenever activeCategory changes
+  }, [activeCategory, searchTerm]);
+
+
+  // Handler for the input field: updates local state immediately
+  const handleSearchInputChange = (event) => {
+    setLocalSearchTerm(event.target.value);
+  };
+
 
   const handleCategoryClick = (category) => {
+    // When category changes, clear search term in both local and parent states
+    setLocalSearchTerm('');
+    setSearchTerm('');
     setActiveCategory(category === 'All' ? null : category);
   };
+
 
   if (loading) {
     return <p>Loading articles...</p>;
@@ -64,6 +104,17 @@ function ArticleList({ activeCategory, setActiveCategory }) {
 
   return (
     <main>
+      {/* Search Input Field */}
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Search articles by title or summary..."
+          className="search-input"
+          value={localSearchTerm} // Bind to local state for immediate feedback
+          onChange={handleSearchInputChange} // Update local state on change
+        />
+      </div>
+
       <div className="category-filters">
         {categories.map(category => (
           <button
@@ -78,7 +129,7 @@ function ArticleList({ activeCategory, setActiveCategory }) {
 
       <div className="articles-container">
         {articles.length === 0 && !loading && !error && (
-          <p className="no-articles-message">No articles found for this category.</p>
+          <p className="no-articles-message">No articles found for this filter.</p>
         )}
         {articles.map(article => (
           <Link to={`/articles/${article.id}`} key={article.id} className="article-card-link">
@@ -101,8 +152,8 @@ function ArticleList({ activeCategory, setActiveCategory }) {
 
 // Main App component with Routing
 function App() {
-  // Move activeCategory state up to the App component
   const [activeCategory, setActiveCategory] = useState(null);
+  const [searchTerm, setSearchTerm] = useState(''); // This is the state that triggers API calls
 
   return (
     <Router>
@@ -113,10 +164,18 @@ function App() {
         </header>
 
         <Routes>
-          {/* Pass activeCategory and setActiveCategory as props to ArticleList */}
-          <Route path="/" element={<ArticleList activeCategory={activeCategory} setActiveCategory={setActiveCategory} />} />
-          {/* Pass activeCategory as a prop to ArticleDetail */}
-          <Route path="/articles/:id" element={<ArticleDetail activeCategory={activeCategory} />} />
+          <Route
+            path="/"
+            element={
+              <ArticleList
+                activeCategory={activeCategory}
+                setActiveCategory={setActiveCategory}
+                searchTerm={searchTerm} // This searchTerm is used for fetching
+                setSearchTerm={setSearchTerm} // This updates the fetching searchTerm
+              />
+            }
+          />
+          <Route path="/articles/:id" element={<ArticleDetail activeCategory={activeCategory} searchTerm={searchTerm} />} />
           <Route path="*" element={<main><p>Page not found</p></main>} />
         </Routes>
       </div>

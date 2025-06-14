@@ -1,12 +1,9 @@
 // frontend/src/ArticleDetail.jsx
 
 import React, { useState, useEffect } from 'react';
-// Import useLocation to determine the current path, though not strictly needed for this specific fix.
-// We'll primarily use Link to construct the back URL.
 import { useParams, Link } from 'react-router-dom';
 
-// ArticleDetail now accepts activeCategory as a prop
-function ArticleDetail({ activeCategory }) {
+function ArticleDetail({ activeCategory, searchTerm }) {
   const { id } = useParams();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,8 +12,8 @@ function ArticleDetail({ activeCategory }) {
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        setLoading(true); // Ensure loading state is reset on ID change
-        setError(null);   // Clear any previous errors
+        setLoading(true);
+        setError(null);
 
         const response = await fetch(`http://localhost:3000/api/articles/${id}`);
         if (!response.ok) {
@@ -32,10 +29,18 @@ function ArticleDetail({ activeCategory }) {
     };
 
     fetchArticle();
-  }, [id]); // Re-run effect if ID changes
+  }, [id]);
 
-  // Construct the 'back to articles' path based on activeCategory
-  const backPath = activeCategory ? `/?category=${activeCategory}` : '/';
+  // Construct the 'back to articles' path based on activeCategory AND searchTerm
+  const backPathParams = new URLSearchParams();
+  if (activeCategory) {
+    backPathParams.append('category', activeCategory);
+  }
+  if (searchTerm) {
+    backPathParams.append('searchTerm', searchTerm);
+  }
+  const finalBackPath = `/?${backPathParams.toString()}`;
+
 
   if (loading) {
     return <div className="article-detail-container">Loading article...</div>;
@@ -51,8 +56,7 @@ function ArticleDetail({ activeCategory }) {
 
   return (
     <div className="article-detail-container">
-      {/* Use the dynamically constructed backPath */}
-      <Link to={backPath} className="back-link">&larr; Back to all articles</Link>
+      <Link to={finalBackPath} className="back-link">&larr; Back to all articles</Link>
       <h1 className="article-detail-title">{article.title}</h1>
       <img src={article.imageUrl} alt={article.title} className="article-detail-image" />
       <p className="article-detail-meta">
