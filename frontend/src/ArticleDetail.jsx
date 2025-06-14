@@ -1,10 +1,13 @@
 // frontend/src/ArticleDetail.jsx
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom'; // Import useParams and Link
+// Import useLocation to determine the current path, though not strictly needed for this specific fix.
+// We'll primarily use Link to construct the back URL.
+import { useParams, Link } from 'react-router-dom';
 
-function ArticleDetail() {
-  const { id } = useParams(); // Get the 'id' from the URL parameters
+// ArticleDetail now accepts activeCategory as a prop
+function ArticleDetail({ activeCategory }) {
+  const { id } = useParams();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -12,7 +15,10 @@ function ArticleDetail() {
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/articles/${id}`); // Fetch specific article by ID
+        setLoading(true); // Ensure loading state is reset on ID change
+        setError(null);   // Clear any previous errors
+
+        const response = await fetch(`http://localhost:3000/api/articles/${id}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -26,7 +32,10 @@ function ArticleDetail() {
     };
 
     fetchArticle();
-  }, [id]); // Re-run effect if ID changes (important for navigation between articles)
+  }, [id]); // Re-run effect if ID changes
+
+  // Construct the 'back to articles' path based on activeCategory
+  const backPath = activeCategory ? `/?category=${activeCategory}` : '/';
 
   if (loading) {
     return <div className="article-detail-container">Loading article...</div>;
@@ -42,14 +51,15 @@ function ArticleDetail() {
 
   return (
     <div className="article-detail-container">
-      <Link to="/" className="back-link">&larr; Back to all articles</Link> {/* Back button */}
+      {/* Use the dynamically constructed backPath */}
+      <Link to={backPath} className="back-link">&larr; Back to all articles</Link>
       <h1 className="article-detail-title">{article.title}</h1>
       <img src={article.imageUrl} alt={article.title} className="article-detail-image" />
       <p className="article-detail-meta">
         {article.author} | {new Date(article.publishedAt).toLocaleDateString()} | {article.category}
       </p>
       <div className="article-detail-body">
-        <p>{article.body}</p> {/* Display the full body */}
+        <p>{article.body}</p>
       </div>
     </div>
   );

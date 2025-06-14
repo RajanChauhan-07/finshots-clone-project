@@ -35,10 +35,55 @@ body {
   font-size: 1.1em;
 }
 
+/* Category Filter Styles */
+.category-filters {
+  margin-bottom: 25px;
+  display: flex;
+  flex-wrap: wrap; /* Allow buttons to wrap to next line */
+  justify-content: center;
+  gap: 10px; /* Space between buttons */
+}
+
+.category-button {
+  background-color: #e9ecef;
+  color: #495057;
+  border: 1px solid #ced4da;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  white-space: nowrap; /* Prevent text wrapping within button */
+}
+
+.category-button:hover {
+  background-color: #dee2e6;
+  border-color: #adb5bd;
+}
+
+.category-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+  font-weight: 600;
+}
+
+.no-articles-message {
+  margin-top: 30px;
+  color: #777;
+  font-size: 1.1em;
+}
+
+/* Article List Styles */
 .articles-container {
   display: flex;
   flex-direction: column;
   gap: 25px; /* Space between article cards */
+}
+
+.article-card-link {
+  text-decoration: none; /* Remove underline from link */
+  color: inherit; /* Inherit text color */
 }
 
 .article-card {
@@ -82,4 +127,36 @@ body {
 .article-meta {
   font-size: 0.85em;
   color: #888;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .App {
+    padding: 15px;
+  }
+  .App-header {
+    padding: 15px;
+  }
+  .article-content {
+    padding: 15px;
+  }
+  .category-button {
+    padding: 6px 12px;
+    font-size: 0.85em;
+  }
+  .article-image {
+    height: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .App-header h1 {
+    font-size: 2em;
+  }
+  .App-header .subtitle {
+    font-size: 1em;
+  }
+  .article-image {
+    height: 150px;
+  }
 }
