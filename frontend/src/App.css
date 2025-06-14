@@ -1,132 +1,151 @@
 /* frontend/src/App.css */
 
+/* Global Styles & Typography */
 body {
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Prefer Inter if available, fallback to Segoe UI */
   margin: 0;
-  background-color: #f0f2f5;
-  color: #333;
+  background-color: #f0f2f5; /* Light grey background */
+  color: #333; /* Dark grey text */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
 }
 
 .App {
   text-align: center;
-  max-width: 800px;
+  max-width: 850px; /* Slightly wider main container */
   margin: 0 auto;
   padding: 20px;
 }
 
+/* Header */
 .App-header {
   background-color: #ffffff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 30px;
+  padding: 25px 20px; /* More vertical padding */
+  border-radius: 12px; /* Slightly more rounded corners */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Softer, larger shadow */
+  margin-bottom: 40px; /* More space below header */
+  text-align: left; /* Align header content to left */
 }
 
 .App-header h1 {
-  color: #333;
-  margin-bottom: 5px;
-  font-size: 2.5em;
+  color: #1a1a1a; /* Darker black for heading */
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 2.8em; /* Larger heading */
+  font-weight: 700; /* Bolder */
+  letter-spacing: -0.02em; /* Slight letter spacing adjustment */
 }
 
 .App-header .subtitle {
   color: #555;
-  font-size: 1.1em;
+  font-size: 1.2em; /* Slightly larger subtitle */
+  margin-bottom: 0;
 }
 
-/* Category Filter Styles */
+/* Category Filter Buttons */
 .category-filters {
-  margin-bottom: 25px;
+  margin-bottom: 35px; /* More space below filters */
   display: flex;
-  flex-wrap: wrap; /* Allow buttons to wrap to next line */
+  flex-wrap: wrap;
   justify-content: center;
-  gap: 10px; /* Space between buttons */
+  gap: 12px; /* Increased space between buttons */
 }
 
 .category-button {
-  background-color: #e9ecef;
+  background-color: #ffffff; /* White background for buttons */
   color: #495057;
-  border: 1px solid #ced4da;
-  padding: 8px 15px;
-  border-radius: 20px;
+  border: 1px solid #e0e0e0; /* Lighter border */
+  padding: 10px 20px; /* More padding */
+  border-radius: 25px; /* More rounded, pill-like */
   cursor: pointer;
-  font-size: 0.9em;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
-  white-space: nowrap; /* Prevent text wrapping within button */
+  font-size: 0.95em; /* Slightly larger font */
+  font-weight: 500;
+  transition: all 0.2s ease; /* Smooth transition for all properties */
+  white-space: nowrap;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Subtle shadow for buttons */
 }
 
 .category-button:hover {
-  background-color: #dee2e6;
-  border-color: #adb5bd;
+  background-color: #f8f9fa;
+  border-color: #c9c9c9;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
 .category-button.active {
-  background-color: #007bff;
+  background-color: #007bff; /* Primary blue */
   color: white;
   border-color: #007bff;
   font-weight: 600;
+  box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3); /* Stronger shadow for active */
+  transform: translateY(-2px); /* Slight lift */
 }
 
 .no-articles-message {
-  margin-top: 30px;
+  margin-top: 50px; /* More space for message */
   color: #777;
-  font-size: 1.1em;
+  font-size: 1.2em;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 /* Article List Styles */
 .articles-container {
   display: flex;
   flex-direction: column;
-  gap: 25px; /* Space between article cards */
+  gap: 30px; /* Increased space between article cards */
 }
 
 .article-card-link {
-  text-decoration: none; /* Remove underline from link */
-  color: inherit; /* Inherit text color */
+  text-decoration: none;
+  color: inherit;
 }
 
 .article-card {
   background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  overflow: hidden; /* Ensures image corners are rounded */
+  border-radius: 12px; /* More rounded corners */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Softer, larger shadow */
+  overflow: hidden;
   text-align: left;
-  transition: transform 0.2s ease-in-out;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .article-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-8px); /* More pronounced lift */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Stronger shadow on hover */
 }
 
 .article-image {
   width: 100%;
-  height: 200px; /* Fixed height for consistency */
-  object-fit: cover; /* Cover the area, potentially cropping */
-  display: block; /* Remove extra space below image */
+  height: 220px; /* Slightly taller image */
+  object-fit: cover;
+  display: block;
 }
 
 .article-content {
-  padding: 20px;
+  padding: 25px; /* More padding */
 }
 
 .article-content h2 {
   margin-top: 0;
-  font-size: 1.6em;
-  color: #333;
-  margin-bottom: 10px;
+  font-size: 1.8em; /* Larger title */
+  color: #1a1a1a;
+  margin-bottom: 12px;
+  font-weight: 600;
 }
 
 .article-summary {
-  color: #666;
-  line-height: 1.6;
-  font-size: 1em;
-  margin-bottom: 15px;
+  color: #555; /* Slightly darker summary text */
+  line-height: 1.7; /* Improved readability */
+  font-size: 1.05em; /* Slightly larger font */
+  margin-bottom: 20px; /* More space below summary */
 }
 
 .article-meta {
-  font-size: 0.85em;
-  color: #888;
+  font-size: 0.9em; /* Slightly larger meta text */
+  color: #777; /* Softer meta color */
 }
 
 /* Media Queries for Responsiveness */
@@ -135,28 +154,71 @@ body {
     padding: 15px;
   }
   .App-header {
-    padding: 15px;
+    padding: 20px 15px;
+    margin-bottom: 30px;
   }
-  .article-content {
-    padding: 15px;
+  .App-header h1 {
+    font-size: 2.2em;
+  }
+  .App-header .subtitle {
+    font-size: 1.1em;
+  }
+  .category-filters {
+    margin-bottom: 25px;
+    gap: 8px;
   }
   .category-button {
-    padding: 6px 12px;
-    font-size: 0.85em;
+    padding: 8px 15px;
+    font-size: 0.88em;
   }
   .article-image {
     height: 180px;
   }
+  .article-content {
+    padding: 20px;
+  }
+  .article-content h2 {
+    font-size: 1.5em;
+  }
+  .article-summary {
+    font-size: 0.95em;
+  }
 }
 
 @media (max-width: 480px) {
+  .App {
+    padding: 10px;
+  }
+  .App-header {
+    padding: 15px 10px;
+    margin-bottom: 20px;
+  }
   .App-header h1 {
-    font-size: 2em;
+    font-size: 1.8em;
   }
   .App-header .subtitle {
-    font-size: 1em;
+    font-size: 0.9em;
+  }
+  .category-filters {
+    flex-direction: column; /* Stack buttons on very small screens */
+    align-items: stretch; /* Make them full width */
+    gap: 8px;
+  }
+  .category-button {
+    width: 100%; /* Full width */
+    text-align: center;
+    padding: 12px 15px; /* More vertical padding for full-width buttons */
+  }
+  .articles-container {
+    gap: 20px;
   }
   .article-image {
-    height: 150px;
+    height: 160px;
+  }
+  .article-content h2 {
+    font-size: 1.3em;
+  }
+  .article-summary {
+    font-size: 0.9em;
   }
 }
