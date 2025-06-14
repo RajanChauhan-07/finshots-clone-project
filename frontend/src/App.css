@@ -1,42 +1,85 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+/* frontend/src/App.css */
+
+body {
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  background-color: #f0f2f5;
+  color: #333;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.App {
   text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.App-header {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.App-header h1 {
+  color: #333;
+  margin-bottom: 5px;
+  font-size: 2.5em;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.App-header .subtitle {
+  color: #555;
+  font-size: 1.1em;
 }
 
-.card {
-  padding: 2em;
+.articles-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px; /* Space between article cards */
 }
 
-.read-the-docs {
+.article-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden; /* Ensures image corners are rounded */
+  text-align: left;
+  transition: transform 0.2s ease-in-out;
+}
+
+.article-card:hover {
+  transform: translateY(-5px);
+}
+
+.article-image {
+  width: 100%;
+  height: 200px; /* Fixed height for consistency */
+  object-fit: cover; /* Cover the area, potentially cropping */
+  display: block; /* Remove extra space below image */
+}
+
+.article-content {
+  padding: 20px;
+}
+
+.article-content h2 {
+  margin-top: 0;
+  font-size: 1.6em;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.article-summary {
+  color: #666;
+  line-height: 1.6;
+  font-size: 1em;
+  margin-bottom: 15px;
+}
+
+.article-meta {
+  font-size: 0.85em;
   color: #888;
 }
