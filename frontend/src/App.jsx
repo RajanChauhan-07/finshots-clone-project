@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import ArticleDetail from './ArticleDetail';
 import './App.css';
 import './ArticleDetail.css';
+import { formatDistanceToNow, parseISO } from 'date-fns'; // Add this import
 
 // Component for listing articles with filtering, search, and pagination
 function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchTerm }) {
@@ -156,7 +157,7 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
                 <h2>{article.title}</h2>
                 <p className="article-summary">{article.summary}</p>
                 <p className="article-meta">
-                  {article.author} | {new Date(article.publishedAt).toLocaleDateString()} | {article.category}
+                    {article.author} | {formatDistanceToNow(parseISO(article.publishedAt), { addSuffix: true })} | {article.category}
                 </p>
               </div>
             </div>

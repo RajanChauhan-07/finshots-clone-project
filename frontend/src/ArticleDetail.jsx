@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { format, parseISO } from 'date-fns'; // Add this import
 
 function ArticleDetail({ activeCategory, searchTerm }) {
   const { id } = useParams();
@@ -60,7 +61,7 @@ function ArticleDetail({ activeCategory, searchTerm }) {
       <h1 className="article-detail-title">{article.title}</h1>
       <img src={article.imageUrl} alt={article.title} className="article-detail-image" />
       <p className="article-detail-meta">
-        {article.author} | {new Date(article.publishedAt).toLocaleDateString()} | {article.category}
+       {article.author} | {format(parseISO(article.publishedAt), 'MMMM dd, yyyy')} | {article.category}
       </p>
       <div className="article-detail-body">
         <p>{article.body}</p>
