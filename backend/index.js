@@ -99,6 +99,105 @@ app.get('/api/articles/:id', async (req, res) => {
   }
 });
 
+// backend/index.js
+
+// ... (existing imports and setup)
+
+// --- API Endpoints ---
+
+// Root URL
+app.get('/', (req, res) => {
+  res.send('Welcome to the Finshots Clone Backend API!');
+});
+
+// API endpoint to get articles, with optional category, search term, AND pagination
+app.get('/api/articles', async (req, res) => {
+  // ... (existing code for fetching articles with pagination)
+});
+
+// API endpoint to get a single article by ID
+app.get('/api/articles/:id', async (req, res) => {
+  // ... (existing code for fetching single article)
+});
+
+// NEW: API endpoint to get ALL articles (for admin list) - No pagination needed here
+app.get('/api/admin/articles', async (req, res) => {
+    try {
+        const articles = await Article.find().sort({ publishedAt: -1 });
+        res.json(articles);
+    } catch (err) {
+        console.error('Error fetching all articles for admin:', err);
+        res.status(500).json({ message: 'Error fetching all articles', error: err.message });
+    }
+});
+
+// NEW: API endpoint to add a new article
+app.post('/api/admin/articles', async (req, res) => {
+    try {
+        const newArticle = new Article({
+            // Generate a unique ID (e.g., timestamp + random or just a UUID library)
+            // For simplicity, let's use a combination of timestamp and a small random number
+            id: `<span class="math-inline">\{Date\.now\(\)\}\-</span>{Math.floor(Math.random() * 1000)}`,
+            title: req.body.title,
+            summary: req.body.summary,
+            body: req.body.body,
+            author: req.body.author,
+            publishedAt: req.body.publishedAt ? new Date(req.body.publishedAt) : new Date(), // Use provided date or current date
+            category: req.body.category,
+            imageUrl: req.body.imageUrl
+        });
+        await newArticle.save();
+        res.status(201).json(newArticle);
+    } catch (err) {
+        console.error('Error adding new article:', err);
+        res.status(400).json({ message: 'Error adding article', error: err.message });
+    }
+});
+
+// NEW: API endpoint to update an existing article by ID
+app.put('/api/admin/articles/:id', async (req, res) => {
+    try {
+        const updatedArticle = await Article.findOneAndUpdate(
+            { id: req.params.id }, // Find by our custom 'id' field
+            req.body,
+            { new: true, runValidators: true } // Return the updated document, run schema validators
+        );
+        if (updatedArticle) {
+            res.json(updatedArticle);
+        } else {
+            res.status(404).send('Article not found');
+        }
+    } catch (err) {
+        console.error('Error updating article:', err);
+        res.status(400).json({ message: 'Error updating article', error: err.message });
+    }
+});
+
+// NEW: API endpoint to delete an article by ID
+app.delete('/api/admin/articles/:id', async (req, res) => {
+    try {
+        const deletedArticle = await Article.findOneAndDelete({ id: req.params.id }); // Find and delete by custom 'id'
+        if (deletedArticle) {
+            res.status(200).json({ message: 'Article deleted successfully' });
+        } else {
+            res.status(404).send('Article not found');
+        }
+    } catch (err) {
+        console.error('Error deleting article:', err);
+        res.status(500).json({ message: 'Error deleting article', error: err.message });
+    }
+});
+
+// API endpoint to seed the database (remains unchanged)
+app.post('/api/seed-articles', async (req, res) => {
+  // ... (existing code for seeding)
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Finshots Clone Backend listening at http://localhost:${port}`);
+});
+
 // API endpoint to seed the database with initial articles (remains unchanged)
 app.post('/api/seed-articles', async (req, res) => {
   try {
@@ -115,3 +214,4 @@ app.post('/api/seed-articles', async (req, res) => {
 app.listen(port, () => {
   console.log(`Finshots Clone Backend listening at http://localhost:${port}`);
 });
+
