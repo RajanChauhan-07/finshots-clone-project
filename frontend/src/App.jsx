@@ -1,19 +1,21 @@
 // frontend/src/App.jsx
 
-import React, { useState, useEffect } from 'react'; // Removed useCallback, not strictly needed for this pattern
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import ArticleDetail from './ArticleDetail';
 import './App.css';
 import './ArticleDetail.css';
 
-
-// Component for listing articles with filtering and search
+// Component for listing articles with filtering, search, and pagination
 function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchTerm }) {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Local state for the search input value, allowing immediate feedback
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+  // New states for pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalArticles, setTotalArticles] = useState(0);
 
   const categories = ['All', 'Economy', 'Startups', 'Fintech', 'Investments', 'ESG'];
 
@@ -22,23 +24,18 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
     setLocalSearchTerm(searchTerm);
   }, [searchTerm]);
 
-
-  // Effect 2: This is the debouncing logic for the actual API call
+  // Effect 2: Debounce logic for updating the parent searchTerm state
   useEffect(() => {
-    // Set up a timer to update the parent's searchTerm state after a delay
     const handler = setTimeout(() => {
-      setSearchTerm(localSearchTerm); // Update the parent's searchTerm prop
+      setSearchTerm(localSearchTerm);
     }, 300); // 300ms debounce delay
-
-    // Cleanup function: Clear the previous timeout if localSearchTerm changes before the delay
     return () => {
       clearTimeout(handler);
     };
-  }, [localSearchTerm, setSearchTerm]); // This effect runs when localSearchTerm or setSearchTerm changes
+  }, [localSearchTerm, setSearchTerm]);
 
 
-  // Effect 3: Fetch articles based on activeCategory and the (debounced) searchTerm prop
-  // This is separated to ensure API call only happens when the *debounced* term is ready
+  // Effect 3: Fetch articles based on activeCategory, searchTerm, and pagination
   useEffect(() => {
     const fetchArticles = async () => {
       try {
@@ -49,20 +46,33 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
         if (activeCategory) {
           urlParams.append('category', activeCategory);
         }
-        if (searchTerm) { // Use the prop searchTerm for the API call
+        if (searchTerm) {
           urlParams.append('searchTerm', searchTerm);
         }
+        urlParams.append('page', currentPage); // Add page number to request
+        urlParams.append('limit', 3); // Fixed limit for articles per page
 
         const url = `http://localhost:3000/api/articles?${urlParams.toString()}`;
 
         const response = await fetch(url);
-
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        setArticles(data);
+        // Backend now returns an object with articles, currentPage, totalPages, totalArticles
+        // Append new articles if loading more, otherwise replace (for category/search changes)
+        setArticles(prevArticles => {
+            if (currentPage === 1) {
+                return data.articles; // Replace articles if it's the first page
+            } else {
+                return [...prevArticles, ...data.articles]; // Append if loading subsequent pages
+            }
+        });
+        setCurrentPage(data.currentPage);
+        setTotalPages(data.totalPages);
+        setTotalArticles(data.totalArticles);
+
       } catch (err) {
         setError(err.message);
       } finally {
@@ -70,28 +80,35 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
       }
     };
 
-    // Trigger fetch only when activeCategory or the debounced searchTerm changes
+    // If currentPage is greater than 1, only fetch if not already loading.
+    // If currentPage is 1, fetch whenever filters/search changes.
     fetchArticles();
-  }, [activeCategory, searchTerm]);
+  }, [activeCategory, searchTerm, currentPage]); // Effect depends on these states
 
 
-  // Handler for the input field: updates local state immediately
   const handleSearchInputChange = (event) => {
     setLocalSearchTerm(event.target.value);
+    // Always reset to page 1 when search term changes
+    setCurrentPage(1);
+    setArticles([]); // Clear articles immediately to show fresh search results
   };
-
 
   const handleCategoryClick = (category) => {
-    // When category changes, clear search term in both local and parent states
-    setLocalSearchTerm('');
-    setSearchTerm('');
+    setLocalSearchTerm(''); // Clear local search input
+    setSearchTerm(''); // Clear parent's debounced search term
     setActiveCategory(category === 'All' ? null : category);
+    // Always reset to page 1 when category changes
+    setCurrentPage(1);
+    setArticles([]); // Clear articles immediately for new category
   };
 
+  const handleReadMoreClick = () => {
+    // Only load next page if not already on the last page
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
 
-  if (loading) {
-    return <p>Loading articles...</p>;
-  }
 
   if (error) {
     return (
@@ -110,8 +127,8 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
           type="text"
           placeholder="Search articles by title or summary..."
           className="search-input"
-          value={localSearchTerm} // Bind to local state for immediate feedback
-          onChange={handleSearchInputChange} // Update local state on change
+          value={localSearchTerm}
+          onChange={handleSearchInputChange}
         />
       </div>
 
@@ -128,7 +145,7 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
       </div>
 
       <div className="articles-container">
-        {articles.length === 0 && !loading && !error && (
+        {articles.length === 0 && !loading && ( // Only show message if no articles AND not loading
           <p className="no-articles-message">No articles found for this filter.</p>
         )}
         {articles.map(article => (
@@ -145,7 +162,24 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
             </div>
           </Link>
         ))}
+        {loading && articles.length === 0 && <p>Loading initial articles...</p>} {/* Initial load message */}
       </div>
+
+      {/* "Read More" Button */}
+      {currentPage < totalPages && (
+        <div className="read-more-container">
+          <button
+            className="read-more-button"
+            onClick={handleReadMoreClick}
+            disabled={loading} // Disable button while loading
+          >
+            {loading ? 'Loading More...' : 'Read More'}
+          </button>
+        </div>
+      )}
+      {/* Optional: Displaying pagination info */}
+      {/* {totalArticles > 0 && <p>Showing {articles.length} of {totalArticles} articles</p>} */}
+
     </main>
   );
 }
@@ -153,7 +187,7 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
 // Main App component with Routing
 function App() {
   const [activeCategory, setActiveCategory] = useState(null);
-  const [searchTerm, setSearchTerm] = useState(''); // This is the state that triggers API calls
+  const [searchTerm, setSearchTerm] = useState('');
 
   return (
     <Router>
@@ -170,8 +204,8 @@ function App() {
               <ArticleList
                 activeCategory={activeCategory}
                 setActiveCategory={setActiveCategory}
-                searchTerm={searchTerm} // This searchTerm is used for fetching
-                setSearchTerm={setSearchTerm} // This updates the fetching searchTerm
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
               />
             }
           />

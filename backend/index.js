@@ -21,7 +21,9 @@ mongoose.connect(MONGODB_URI)
   .then(() => console.log('MongoDB connected successfully!'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Define Article Schema and Model
+// --- Mongoose Models ---
+
+// Article Schema and Model
 const articleSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
   title: String,
@@ -32,7 +34,6 @@ const articleSchema = new mongoose.Schema({
   category: String,
   imageUrl: String
 });
-
 const Article = mongoose.model('Article', articleSchema);
 
 // --- API Endpoints ---
@@ -42,28 +43,41 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Finshots Clone Backend API!');
 });
 
-// API endpoint to get all articles, now with optional category AND search term filtering
+// API endpoint to get articles, with optional category, search term, AND pagination
 app.get('/api/articles', async (req, res) => {
   const category = req.query.category;
-  const searchTerm = req.query.searchTerm; // Get the 'searchTerm' from query parameters
+  const searchTerm = req.query.searchTerm;
+  const page = parseInt(req.query.page) || 1; // Default to page 1
+  const limit = parseInt(req.query.limit) || 3; // Default to 3 articles per page
 
-  let query = {}; // Start with an empty query object
+  let query = {};
 
   if (category) {
-    query.category = { $regex: new RegExp(category, 'i') }; // Case-insensitive category match
+    query.category = { $regex: new RegExp(category, 'i') };
   }
 
   if (searchTerm) {
-    // If searchTerm is provided, add an OR condition to search in title or summary
     query.$or = [
-      { title: { $regex: new RegExp(searchTerm, 'i') } }, // Case-insensitive title search
-      { summary: { $regex: new RegExp(searchTerm, 'i') } } // Case-insensitive summary search
+      { title: { $regex: new RegExp(searchTerm, 'i') } },
+      { summary: { $regex: new RegExp(searchTerm, 'i') } } 
     ];
   }
 
   try {
-    const articles = await Article.find(query).sort({ publishedAt: -1 }); // Find articles and sort by newest first
-    res.json(articles);
+    const articles = await Article.find(query)
+      .sort({ publishedAt: -1 })
+      .skip((page - 1) * limit) // Skip articles for previous pages
+      .limit(limit); // Limit the number of articles per page
+
+    const totalArticles = await Article.countDocuments(query); // Total articles matching the query
+    const totalPages = Math.ceil(totalArticles / limit);
+
+    res.json({
+      articles,
+      currentPage: page,
+      totalPages,
+      totalArticles
+    });
   } catch (err) {
     console.error('Error fetching articles:', err);
     res.status(500).json({ message: 'Error fetching articles', error: err.message });

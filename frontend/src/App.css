@@ -45,7 +45,7 @@ body {
 
 /* Search Input Styles */
 .search-container {
-  margin-bottom: 25px; /* Space above category filters */
+  margin-bottom: 25px;
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
@@ -53,7 +53,7 @@ body {
 }
 
 .search-input {
-  width: calc(100% - 20px); /* Account for padding */
+  width: calc(100% - 20px);
   padding: 12px 10px;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -71,7 +71,6 @@ body {
 .search-input::placeholder {
   color: #999;
 }
-
 
 /* Category Filter Buttons */
 .category-filters {
@@ -178,6 +177,37 @@ body {
   color: #777;
 }
 
+/* "Read More" Button Styles */
+.read-more-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.read-more-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.read-more-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.read-more-button:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    transform: none;
+}
+
 /* Media Queries for Responsiveness */
 @media (max-width: 768px) {
   .App {
@@ -220,6 +250,10 @@ body {
   }
   .article-summary {
     font-size: 0.95em;
+  }
+  .read-more-button {
+    font-size: 1em;
+    padding: 10px 20px;
   }
 }
 
@@ -266,5 +300,9 @@ body {
   }
   .article-summary {
     font-size: 0.9em;
+  }
+  .read-more-button {
+    font-size: 0.9em;
+    padding: 8px 18px;
   }
 }
