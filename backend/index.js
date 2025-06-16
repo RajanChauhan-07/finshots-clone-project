@@ -12,7 +12,7 @@ const app = express();
 const port = 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // Middleware to parse JSON request bodies
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -43,7 +43,7 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Finshots Clone Backend API!');
 });
 
-// API endpoint to get articles, with optional category, search term, AND pagination
+// Existing: API endpoint to get articles, with optional category, search term, AND pagination
 app.get('/api/articles', async (req, res) => {
   const category = req.query.category;
   const searchTerm = req.query.searchTerm;
@@ -59,17 +59,17 @@ app.get('/api/articles', async (req, res) => {
   if (searchTerm) {
     query.$or = [
       { title: { $regex: new RegExp(searchTerm, 'i') } },
-      { summary: { $regex: new RegExp(searchTerm, 'i') } } 
+      { summary: { $regex: new RegExp(searchTerm, 'i') } }
     ];
   }
 
   try {
     const articles = await Article.find(query)
       .sort({ publishedAt: -1 })
-      .skip((page - 1) * limit) // Skip articles for previous pages
-      .limit(limit); // Limit the number of articles per page
+      .skip((page - 1) * limit)
+      .limit(limit);
 
-    const totalArticles = await Article.countDocuments(query); // Total articles matching the query
+    const totalArticles = await Article.countDocuments(query);
     const totalPages = Math.ceil(totalArticles / limit);
 
     res.json({
@@ -84,7 +84,7 @@ app.get('/api/articles', async (req, res) => {
   }
 });
 
-// API endpoint to get a single article by ID (remains unchanged)
+// Existing: API endpoint to get a single article by ID
 app.get('/api/articles/:id', async (req, res) => {
   try {
     const article = await Article.findOne({ id: req.params.id });
@@ -97,27 +97,6 @@ app.get('/api/articles/:id', async (req, res) => {
     console.error('Error fetching single article:', err);
     res.status(500).json({ message: 'Error fetching article', error: err.message });
   }
-});
-
-// backend/index.js
-
-// ... (existing imports and setup)
-
-// --- API Endpoints ---
-
-// Root URL
-app.get('/', (req, res) => {
-  res.send('Welcome to the Finshots Clone Backend API!');
-});
-
-// API endpoint to get articles, with optional category, search term, AND pagination
-app.get('/api/articles', async (req, res) => {
-  // ... (existing code for fetching articles with pagination)
-});
-
-// API endpoint to get a single article by ID
-app.get('/api/articles/:id', async (req, res) => {
-  // ... (existing code for fetching single article)
 });
 
 // NEW: API endpoint to get ALL articles (for admin list) - No pagination needed here
@@ -135,8 +114,7 @@ app.get('/api/admin/articles', async (req, res) => {
 app.post('/api/admin/articles', async (req, res) => {
     try {
         const newArticle = new Article({
-            // Generate a unique ID (e.g., timestamp + random or just a UUID library)
-            // For simplicity, let's use a combination of timestamp and a small random number
+            // For simplicity, let's use a combination of timestamp and a small random number for ID
             id: `<span class="math-inline">\{Date\.now\(\)\}\-</span>{Math.floor(Math.random() * 1000)}`,
             title: req.body.title,
             summary: req.body.summary,
@@ -190,16 +168,6 @@ app.delete('/api/admin/articles/:id', async (req, res) => {
 
 // API endpoint to seed the database (remains unchanged)
 app.post('/api/seed-articles', async (req, res) => {
-  // ... (existing code for seeding)
-});
-
-// Start the server
-app.listen(port, () => {
-  console.log(`Finshots Clone Backend listening at http://localhost:${port}`);
-});
-
-// API endpoint to seed the database with initial articles (remains unchanged)
-app.post('/api/seed-articles', async (req, res) => {
   try {
     await Article.deleteMany({});
     await Article.insertMany(articlesData);
@@ -210,8 +178,8 @@ app.post('/api/seed-articles', async (req, res) => {
   }
 });
 
-// Start the server
+
+// Start the server (ONLY ONE app.listen() call at the very end)
 app.listen(port, () => {
   console.log(`Finshots Clone Backend listening at http://localhost:${port}`);
 });
-
