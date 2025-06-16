@@ -16,7 +16,7 @@ function ArticleDetail({ activeCategory, searchTerm }) {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`http://localhost:3000/api/articles/${id}`);
+        const response = await fetch(`https://finshots-clone-project.onrender.com/api/articles/${id}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
