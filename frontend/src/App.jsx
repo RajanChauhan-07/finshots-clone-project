@@ -5,7 +5,20 @@ import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import ArticleDetail from './ArticleDetail';
 import './App.css';
 import './ArticleDetail.css';
-import { formatDistanceToNow, parseISO } from 'date-fns'; // Add this import
+import { formatDistanceToNow, parseISO } from 'date-fns';
+
+// NEW: Article Skeleton Component
+const ArticleSkeleton = () => (
+  <div className="article-card skeleton-card">
+    <div className="skeleton-image"></div>
+    <div className="article-content">
+      <div className="skeleton-title"></div>
+      <div className="skeleton-summary"></div>
+      <div className="skeleton-summary short"></div>
+      <div className="skeleton-meta"></div>
+    </div>
+  </div>
+);
 
 // Component for listing articles with filtering, search, and pagination
 function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchTerm }) {
@@ -13,14 +26,13 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
-  // New states for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalArticles, setTotalArticles] = useState(0);
 
   const categories = ['All', 'Economy', 'Startups', 'Fintech', 'Investments', 'ESG'];
 
-  // Effect 1: Sync localSearchTerm with prop.searchTerm when prop changes (e.g., from back navigation or category click)
+  // Effect 1: Sync localSearchTerm with prop.searchTerm when prop changes
   useEffect(() => {
     setLocalSearchTerm(searchTerm);
   }, [searchTerm]);
@@ -29,18 +41,17 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
   useEffect(() => {
     const handler = setTimeout(() => {
       setSearchTerm(localSearchTerm);
-    }, 300); // 300ms debounce delay
+    }, 300);
     return () => {
       clearTimeout(handler);
     };
   }, [localSearchTerm, setSearchTerm]);
 
-
   // Effect 3: Fetch articles based on activeCategory, searchTerm, and pagination
   useEffect(() => {
     const fetchArticles = async () => {
       try {
-        setLoading(true);
+        setLoading(true); // Set loading to true when fetch starts
         setError(null);
 
         const urlParams = new URLSearchParams();
@@ -50,8 +61,8 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
         if (searchTerm) {
           urlParams.append('searchTerm', searchTerm);
         }
-        urlParams.append('page', currentPage); // Add page number to request
-        urlParams.append('limit', 3); // Fixed limit for articles per page
+        urlParams.append('page', currentPage);
+        urlParams.append('limit', 3); // Keeping limit at 3 for easier testing of pagination
 
         const url = `http://localhost:3000/api/articles?${urlParams.toString()}`;
 
@@ -61,13 +72,12 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
         }
 
         const data = await response.json();
-        // Backend now returns an object with articles, currentPage, totalPages, totalArticles
-        // Append new articles if loading more, otherwise replace (for category/search changes)
+
         setArticles(prevArticles => {
             if (currentPage === 1) {
-                return data.articles; // Replace articles if it's the first page
+                return data.articles;
             } else {
-                return [...prevArticles, ...data.articles]; // Append if loading subsequent pages
+                return [...prevArticles, ...data.articles];
             }
         });
         setCurrentPage(data.currentPage);
@@ -77,34 +87,29 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
       } catch (err) {
         setError(err.message);
       } finally {
-        setLoading(false);
+        setLoading(false); // Set loading to false when fetch finishes
       }
     };
 
-    // If currentPage is greater than 1, only fetch if not already loading.
-    // If currentPage is 1, fetch whenever filters/search changes.
     fetchArticles();
-  }, [activeCategory, searchTerm, currentPage]); // Effect depends on these states
+  }, [activeCategory, searchTerm, currentPage]);
 
 
   const handleSearchInputChange = (event) => {
     setLocalSearchTerm(event.target.value);
-    // Always reset to page 1 when search term changes
     setCurrentPage(1);
     setArticles([]); // Clear articles immediately to show fresh search results
   };
 
   const handleCategoryClick = (category) => {
-    setLocalSearchTerm(''); // Clear local search input
-    setSearchTerm(''); // Clear parent's debounced search term
+    setLocalSearchTerm('');
+    setSearchTerm('');
     setActiveCategory(category === 'All' ? null : category);
-    // Always reset to page 1 when category changes
     setCurrentPage(1);
     setArticles([]); // Clear articles immediately for new category
   };
 
   const handleReadMoreClick = () => {
-    // Only load next page if not already on the last page
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
     }
@@ -119,6 +124,10 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
       </>
     );
   }
+
+  // Determine what to render based on loading state and articles found
+  const shouldShowNoArticlesMessage = !loading && articles.length === 0 && (activeCategory || searchTerm);
+  const shouldShowSkeletons = loading && articles.length === 0;
 
   return (
     <main>
@@ -146,9 +155,10 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
       </div>
 
       <div className="articles-container">
-        {articles.length === 0 && !loading && ( // Only show message if no articles AND not loading
+        {shouldShowNoArticlesMessage && (
           <p className="no-articles-message">No articles found for this filter.</p>
         )}
+
         {articles.map(article => (
           <Link to={`/articles/${article.id}`} key={article.id} className="article-card-link">
             <div className="article-card">
@@ -157,17 +167,24 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
                 <h2>{article.title}</h2>
                 <p className="article-summary">{article.summary}</p>
                 <p className="article-meta">
-                    {article.author} | {formatDistanceToNow(parseISO(article.publishedAt), { addSuffix: true })} | {article.category}
+                  {article.author} | {formatDistanceToNow(parseISO(article.publishedAt), { addSuffix: true })} | {article.category}
                 </p>
               </div>
             </div>
           </Link>
         ))}
-        {loading && articles.length === 0 && <p>Loading initial articles...</p>} {/* Initial load message */}
+
+        {shouldShowSkeletons && (
+          <>
+            {Array.from({ length: 3 }).map((_, index) => ( // Render 3 skeleton cards
+              <ArticleSkeleton key={index} />
+            ))}
+          </>
+        )}
       </div>
 
       {/* "Read More" Button */}
-      {currentPage < totalPages && (
+      {currentPage < totalPages && !shouldShowSkeletons && ( // Hide button if skeletons are showing
         <div className="read-more-container">
           <button
             className="read-more-button"
@@ -178,8 +195,6 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
           </button>
         </div>
       )}
-      {/* Optional: Displaying pagination info */}
-      {/* {totalArticles > 0 && <p>Showing {articles.length} of {totalArticles} articles</p>} */}
 
     </main>
   );
