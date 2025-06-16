@@ -64,7 +64,7 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
         urlParams.append('page', currentPage);
         urlParams.append('limit', 3); // Keeping limit at 3 for easier testing of pagination
 
-        const url = `http://localhost:3000/api/articles?${urlParams.toString()}`;
+        const url = `https://finshots-clone-project.onrender.com/api/articles?${urlParams.toString()}`;
 
         const response = await fetch(url);
         if (!response.ok) {
