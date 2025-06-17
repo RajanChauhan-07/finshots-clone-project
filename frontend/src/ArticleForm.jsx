@@ -1,5 +1,6 @@
 // frontend/src/ArticleForm.jsx
 import React, { useState, useEffect } from 'react';
+import { v4 as uuidv4 } from 'uuid'; // This line is correct and should be here
 
 const ArticleForm = ({ backendUrl, editingArticle, onSuccess }) => {
     const initialFormState = {
@@ -9,7 +10,7 @@ const ArticleForm = ({ backendUrl, editingArticle, onSuccess }) => {
         author: '',
         category: 'Fintech', // Default category
         imageUrl: '',
-        publishedAt: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+        publishedAt: new Date().toISOString().split('T')[0], //YYYY-MM-DD
     };
 
     const [formData, setFormData] = useState(initialFormState);
@@ -51,8 +52,22 @@ const ArticleForm = ({ backendUrl, editingArticle, onSuccess }) => {
 
         const method = editingArticle ? 'PUT' : 'POST';
         const url = editingArticle
-            ? `<span class="math-inline">\{backendUrl\}/api/admin/articles/</span>{editingArticle.id}`
+            ? `${backendUrl}/api/admin/articles/${editingArticle.id}`
             : `${backendUrl}/api/admin/articles`;
+
+        // --- START OF REQUIRED CHANGE ---
+        const articleDataToSend = {
+            ...formData, // Take all current form data
+            // Conditionally add a new UUID for new articles
+            // For existing articles, use their existing ID
+            id: editingArticle ? editingArticle.id : uuidv4(),
+            // Ensure publishedAt is an ISO string before sending to backend
+            // This is crucial because your backend expects an ISO string.
+            publishedAt: formData.publishedAt
+                ? new Date(formData.publishedAt).toISOString()
+                : new Date().toISOString(),
+        };
+        // --- END OF REQUIRED CHANGE ---
 
         try {
             const response = await fetch(url, {
@@ -60,7 +75,8 @@ const ArticleForm = ({ backendUrl, editingArticle, onSuccess }) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData),
+                // Send the newly constructed articleDataToSend
+                body: JSON.stringify(articleDataToSend),
             });
 
             if (!response.ok) {
