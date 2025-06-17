@@ -3,7 +3,7 @@
 require('dotenv').config();
 
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // Keep this import
 const mongoose = require('mongoose');
 
 const articlesData = require('./data'); // Our mock data, for seeding only
@@ -11,28 +11,53 @@ const articlesData = require('./data'); // Our mock data, for seeding only
 const app = express();
 const port = 3000;
 
-app.use(cors());
 app.use(express.json()); // Middleware to parse JSON request bodies
+
+// --- START OF REQUIRED CORS CONFIGURATION CHANGE ---
+// CORS configuration
+const allowedOrigins = [
+    'https://finshots-clone-project.vercel.app', // Your Vercel frontend URL
+    'https://finshots-clone-project-git-main-rajan-chauhans-projects.vercel.app',
+    'https://finshots-clone-project-qyz9xeh51-rajan-chauhans-projects.vercel.app',
+    'http://localhost:5173', // For local frontend development
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl, or same-origin in development)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true, // If you're sending cookies/auth headers later
+    optionsSuccessStatus: 204 // For preflight requests
+}));
+// --- END OF REQUIRED CORS CONFIGURATION CHANGE ---
+
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI;
 
 mongoose.connect(MONGODB_URI)
-  .then(() => console.log('MongoDB connected successfully!'))
-  .catch(err => console.error('MongoDB connection error:', err));
+    .then(() => console.log('MongoDB connected successfully!'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
 // --- Mongoose Models ---
 
 // Article Schema and Model
 const articleSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
-  title: String,
-  summary: String,
-  body: String,
-  author: String,
-  publishedAt: Date,
-  category: String,
-  imageUrl: String
+    id: { type: String, required: true, unique: true },
+    title: String,
+    summary: String,
+    body: String,
+    author: String,
+    publishedAt: Date,
+    category: String,
+    imageUrl: String
 });
 const Article = mongoose.model('Article', articleSchema);
 
@@ -40,63 +65,63 @@ const Article = mongoose.model('Article', articleSchema);
 
 // Root URL
 app.get('/', (req, res) => {
-  res.send('Welcome to the Finshots Clone Backend API!');
+    res.send('Welcome to the Finshots Clone Backend API!');
 });
 
 // Existing: API endpoint to get articles, with optional category, search term, AND pagination
 app.get('/api/articles', async (req, res) => {
-  const category = req.query.category;
-  const searchTerm = req.query.searchTerm;
-  const page = parseInt(req.query.page) || 1; // Default to page 1
-  const limit = parseInt(req.query.limit) || 3; // Default to 3 articles per page
+    const category = req.query.category;
+    const searchTerm = req.query.searchTerm;
+    const page = parseInt(req.query.page) || 1; // Default to page 1
+    const limit = parseInt(req.query.limit) || 3; // Default to 3 articles per page
 
-  let query = {};
+    let query = {};
 
-  if (category) {
-    query.category = { $regex: new RegExp(category, 'i') };
-  }
+    if (category) {
+        query.category = { $regex: new RegExp(category, 'i') };
+    }
 
-  if (searchTerm) {
-    query.$or = [
-      { title: { $regex: new RegExp(searchTerm, 'i') } },
-      { summary: { $regex: new RegExp(searchTerm, 'i') } }
-    ];
-  }
+    if (searchTerm) {
+        query.$or = [
+            { title: { $regex: new RegExp(searchTerm, 'i') } },
+            { summary: { $regex: new RegExp(searchTerm, 'i') } }
+        ];
+    }
 
-  try {
-    const articles = await Article.find(query)
-      .sort({ publishedAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
+    try {
+        const articles = await Article.find(query)
+            .sort({ publishedAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit);
 
-    const totalArticles = await Article.countDocuments(query);
-    const totalPages = Math.ceil(totalArticles / limit);
+        const totalArticles = await Article.countDocuments(query);
+        const totalPages = Math.ceil(totalArticles / limit);
 
-    res.json({
-      articles,
-      currentPage: page,
-      totalPages,
-      totalArticles
-    });
-  } catch (err) {
-    console.error('Error fetching articles:', err);
-    res.status(500).json({ message: 'Error fetching articles', error: err.message });
-  }
+        res.json({
+            articles,
+            currentPage: page,
+            totalPages,
+            totalArticles
+        });
+    } catch (err) {
+        console.error('Error fetching articles:', err);
+        res.status(500).json({ message: 'Error fetching articles', error: err.message });
+    }
 });
 
 // Existing: API endpoint to get a single article by ID
 app.get('/api/articles/:id', async (req, res) => {
-  try {
-    const article = await Article.findOne({ id: req.params.id });
-    if (article) {
-      res.json(article);
-    } else {
-      res.status(404).send('Article not found');
+    try {
+        const article = await Article.findOne({ id: req.params.id });
+        if (article) {
+            res.json(article);
+        } else {
+            res.status(404).send('Article not found');
+        }
+    } catch (err) {
+        console.error('Error fetching single article:', err);
+        res.status(500).json({ message: 'Error fetching article', error: err.message });
     }
-  } catch (err) {
-    console.error('Error fetching single article:', err);
-    res.status(500).json({ message: 'Error fetching article', error: err.message });
-  }
 });
 
 // NEW: API endpoint to get ALL articles (for admin list) - No pagination needed here
@@ -113,9 +138,9 @@ app.get('/api/admin/articles', async (req, res) => {
 // NEW: API endpoint to add a new article
 app.post('/api/admin/articles', async (req, res) => {
     try {
+        // ID is now generated by the frontend using uuid, so directly use req.body.id
         const newArticle = new Article({
-            // For simplicity, let's use a combination of timestamp and a small random number for ID
-            id: `<span class="math-inline">\{Date\.now\(\)\}\-</span>{Math.floor(Math.random() * 1000)}`,
+            id: req.body.id, // Use the ID generated by the frontend
             title: req.body.title,
             summary: req.body.summary,
             body: req.body.body,
@@ -168,18 +193,18 @@ app.delete('/api/admin/articles/:id', async (req, res) => {
 
 // API endpoint to seed the database (remains unchanged)
 app.post('/api/seed-articles', async (req, res) => {
-  try {
-    await Article.deleteMany({});
-    await Article.insertMany(articlesData);
-    res.status(201).json({ message: 'Database seeded successfully with initial articles!' });
-  } catch (err) {
-    console.error('Error seeding database:', err);
-    res.status(500).json({ message: 'Error seeding database', error: err.message });
-  }
+    try {
+        await Article.deleteMany({});
+        await Article.insertMany(articlesData);
+        res.status(201).json({ message: 'Database seeded successfully with initial articles!' });
+    } catch (err) {
+        console.error('Error seeding database:', err);
+        res.status(500).json({ message: 'Error seeding database', error: err.message });
+    }
 });
 
 
 // Start the server (ONLY ONE app.listen() call at the very end)
 app.listen(port, () => {
-  console.log(`Finshots Clone Backend listening at http://localhost:${port}`);
+    console.log(`Finshots Clone Backend listening at http://localhost:${port}`);
 });
