@@ -66,7 +66,7 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
         urlParams.append('limit', 3); // Keeping limit at 3 for easier testing of pagination
 
         // Use the backendUrl prop here
-        const url = `<span class="math-inline">\{backendUrl\}/api/articles?</span>{urlParams.toString()}`;
+        const url = `${backendUrl}/api/articles?${urlParams.toString()}`;
 
         const response = await fetch(url);
         if (!response.ok) {

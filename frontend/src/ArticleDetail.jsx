@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { format, parseISO } from 'date-fns'; // Add this import
 
-function ArticleDetail({ activeCategory, searchTerm }) {
+function ArticleDetail({ activeCategory, searchTerm, backendUrl }) {
   const { id } = useParams();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,7 +16,7 @@ function ArticleDetail({ activeCategory, searchTerm }) {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`https://finshots-clone-project.onrender.com/api/articles/${id}`);
+        const response = await fetch(`${backendUrl}/api/articles/${id}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -30,7 +30,7 @@ function ArticleDetail({ activeCategory, searchTerm }) {
     };
 
     fetchArticle();
-  }, [id]);
+  }, [id, backendUrl]);
 
   // Construct the 'back to articles' path based on activeCategory AND searchTerm
   const backPathParams = new URLSearchParams();
