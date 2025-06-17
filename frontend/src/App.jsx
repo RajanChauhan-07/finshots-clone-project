@@ -6,6 +6,7 @@ import ArticleDetail from './ArticleDetail';
 import './App.css';
 import './ArticleDetail.css';
 import { formatDistanceToNow, parseISO } from 'date-fns';
+import AdminPanel from './AdminPanel'; // Import AdminPanel
 
 // NEW: Article Skeleton Component
 const ArticleSkeleton = () => (
@@ -21,7 +22,7 @@ const ArticleSkeleton = () => (
 );
 
 // Component for listing articles with filtering, search, and pagination
-function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchTerm }) {
+function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchTerm, backendUrl }) { // Added backendUrl prop
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -64,7 +65,8 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
         urlParams.append('page', currentPage);
         urlParams.append('limit', 3); // Keeping limit at 3 for easier testing of pagination
 
-        const url = `https://finshots-clone-project.onrender.com/api/articles?${urlParams.toString()}`;
+        // Use the backendUrl prop here
+        const url = `<span class="math-inline">\{backendUrl\}/api/articles?</span>{urlParams.toString()}`;
 
         const response = await fetch(url);
         if (!response.ok) {
@@ -92,7 +94,7 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
     };
 
     fetchArticles();
-  }, [activeCategory, searchTerm, currentPage]);
+  }, [activeCategory, searchTerm, currentPage, backendUrl]); // Added backendUrl to dependencies
 
 
   const handleSearchInputChange = (event) => {
@@ -120,7 +122,8 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
     return (
       <>
         <p style={{ color: 'red' }}>Error: {error}</p>
-        <p>Please ensure your backend server is running at http://localhost:3000</p>
+        {/* Updated message to reflect deployed backend */}
+        <p>Please ensure your backend server is running at {backendUrl}</p>
       </>
     );
   }
@@ -184,12 +187,12 @@ function ArticleList({ activeCategory, setActiveCategory, searchTerm, setSearchT
       </div>
 
       {/* "Read More" Button */}
-      {currentPage < totalPages && !shouldShowSkeletons && ( // Hide button if skeletons are showing
+      {currentPage < totalPages && !shouldShowSkeletons && (
         <div className="read-more-container">
           <button
             className="read-more-button"
             onClick={handleReadMoreClick}
-            disabled={loading} // Disable button while loading
+            disabled={loading}
           >
             {loading ? 'Loading More...' : 'Read More'}
           </button>
@@ -205,6 +208,9 @@ function App() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Define your backend URL here. REPLACE WITH YOUR ACTUAL RENDER URL
+  const backendUrl = "https://finshots-clone-project.onrender.com"; // <--- IMPORTANT: REPLACE THIS
+
   return (
     <Router>
       <div className="App">
@@ -212,6 +218,11 @@ function App() {
           <h1>Finshots Clone</h1>
           <p className="subtitle">Daily financial news in 3 minutes</p>
         </header>
+
+        {/* NEW: Admin Panel Link */}
+        <div className="text-center mb-6">
+            <Link to="/admin" className="text-blue-600 hover:underline text-lg font-medium">Go to Admin Panel</Link>
+        </div>
 
         <Routes>
           <Route
@@ -222,10 +233,15 @@ function App() {
                 setActiveCategory={setActiveCategory}
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
+                backendUrl={backendUrl} 
               />
             }
           />
-          <Route path="/articles/:id" element={<ArticleDetail activeCategory={activeCategory} searchTerm={searchTerm} />} />
+          <Route
+            path="/articles/:id"
+            element={<ArticleDetail activeCategory={activeCategory} searchTerm={searchTerm} backendUrl={backendUrl} />}
+          />
+          <Route path="/admin" element={<AdminPanel backendUrl={backendUrl} />} /> {/* Pass backendUrl to AdminPanel */}
           <Route path="*" element={<main><p>Page not found</p></main>} />
         </Routes>
       </div>
