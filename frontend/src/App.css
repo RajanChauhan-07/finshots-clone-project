@@ -1,5 +1,10 @@
 /* frontend/src/App.css */
 
+/* Add these three lines at the very top */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Global Styles & Typography */
 body {
   font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -312,7 +317,6 @@ body {
 .skeleton-card {
   background-color: #e0e0e0;
   border-radius: 12px;
-  overflow: hidden;
   animation: pulse-bg 1.5s infinite; /* Base animation for the entire card */
 }
 

@@ -1,73 +1,61 @@
 // frontend/src/ArticleForm.jsx
 import React, { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid'; // This line is correct and should be here
+import { v4 as uuidv4 } from 'uuid'; // Ensure uuid is imported
 
-const ArticleForm = ({ backendUrl, editingArticle, onSuccess }) => {
-    const initialFormState = {
-        title: '',
-        summary: '',
-        body: '',
-        author: '',
-        category: 'Fintech', // Default category
-        imageUrl: '',
-        publishedAt: new Date().toISOString().split('T')[0], //YYYY-MM-DD
-    };
+const ArticleForm = ({ backendUrl, editingArticle, onSuccess, onCancel }) => {
+    const [title, setTitle] = useState('');
+    const [summary, setSummary] = useState('');
+    const [body, setBody] = useState('');
+    const [author, setAuthor] = useState('');
+    const [category, setCategory] = useState('Fintech'); // Default category
+    const [imageUrl, setImageUrl] = useState('');
+    const [publishedAt, setPublishedAt] = useState(''); // Date string
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const [formData, setFormData] = useState(initialFormState);
-    const [submitting, setSubmitting] = useState(false);
-    const [submitError, setSubmitError] = useState(null);
-    const [submitSuccess, setSubmitSuccess] = useState(false);
-
-    // Populate form if editing an article
     useEffect(() => {
         if (editingArticle) {
-            setFormData({
-                title: editingArticle.title || '',
-                summary: editingArticle.summary || '',
-                body: editingArticle.body || '',
-                author: editingArticle.author || '',
-                category: editingArticle.category || 'Fintech',
-                imageUrl: editingArticle.imageUrl || '',
-                publishedAt: editingArticle.publishedAt
-                    ? new Date(editingArticle.publishedAt).toISOString().split('T')[0] // Format for date input
-                    : new Date().toISOString().split('T')[0],
-            });
+            setTitle(editingArticle.title || '');
+            setSummary(editingArticle.summary || '');
+            setBody(editingArticle.body || '');
+            setAuthor(editingArticle.author || '');
+            setCategory(editingArticle.category || 'Fintech');
+            setImageUrl(editingArticle.imageUrl || '');
+            // Format date for input type="date"
+            setPublishedAt(editingArticle.publishedAt ? new Date(editingArticle.publishedAt).toISOString().split('T')[0] : '');
         } else {
-            setFormData(initialFormState); // Reset form for new article
+            // Reset form for new article
+            setTitle('');
+            setSummary('');
+            setBody('');
+            setAuthor('');
+            setCategory('Fintech');
+            setImageUrl('');
+            setPublishedAt(new Date().toISOString().split('T')[0]); // Default to today's date
         }
-        setSubmitSuccess(false); // Reset success message on form change
-        setSubmitError(null); // Reset error message on form change
     }, [editingArticle]);
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setSubmitting(true);
-        setSubmitError(null);
-        setSubmitSuccess(false);
+        setLoading(true);
+        setError(null);
 
-        const method = editingArticle ? 'PUT' : 'POST';
-        const url = editingArticle
-            ? `${backendUrl}/api/admin/articles/${editingArticle.id}`
-            : `${backendUrl}/api/admin/articles`;
-
-        // --- START OF REQUIRED CHANGE ---
-        const articleDataToSend = {
-            ...formData, // Take all current form data
-            // Conditionally add a new UUID for new articles
-            // For existing articles, use their existing ID
-            id: editingArticle ? editingArticle.id : uuidv4(),
-            // Ensure publishedAt is an ISO string before sending to backend
-            // This is crucial because your backend expects an ISO string.
-            publishedAt: formData.publishedAt
-                ? new Date(formData.publishedAt).toISOString()
-                : new Date().toISOString(),
+        const articleData = {
+            title, summary, body, author, category, imageUrl,
+            publishedAt: publishedAt ? new Date(publishedAt).toISOString() : new Date().toISOString()
         };
-        // --- END OF REQUIRED CHANGE ---
+
+        let url = '';
+        let method = '';
+
+        if (editingArticle) {
+            url = `${backendUrl}/api/admin/articles/${editingArticle.id}`;
+            method = 'PUT';
+        } else {
+            url = `${backendUrl}/api/admin/articles`;
+            method = 'POST';
+            articleData.id = uuidv4(); // Generate ID only for new articles
+        }
 
         try {
             const response = await fetch(url, {
@@ -75,8 +63,7 @@ const ArticleForm = ({ backendUrl, editingArticle, onSuccess }) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                // Send the newly constructed articleDataToSend
-                body: JSON.stringify(articleDataToSend),
+                body: JSON.stringify(articleData)
             });
 
             if (!response.ok) {
@@ -84,80 +71,71 @@ const ArticleForm = ({ backendUrl, editingArticle, onSuccess }) => {
                 throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
 
-            setSubmitSuccess(true);
-            setFormData(initialFormState); // Clear form after successful submission
-            if (onSuccess) {
-                onSuccess(); // Notify parent (AdminPanel) to re-fetch articles
-            }
+            const result = await response.json();
             alert(`Article ${editingArticle ? 'updated' : 'added'} successfully!`);
+            onSuccess(); // Callback to refresh article list
         } catch (err) {
-            console.error("Error submitting article:", err);
-            setSubmitError(`Failed to ${editingArticle ? 'update' : 'add'} article: ${err.message}`);
+            console.error(`Error ${editingArticle ? 'updating' : 'adding'} article:`, err);
+            setError(err.message);
             alert(`Failed to ${editingArticle ? 'update' : 'add'} article: ${err.message}`);
         } finally {
-            setSubmitting(false);
+            setLoading(false);
         }
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                 <input
                     type="text"
                     id="title"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleChange}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
                     required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
             </div>
             <div>
-                <label htmlFor="summary" className="block text-sm font-medium text-gray-700">Summary</label>
+                <label htmlFor="summary" className="block text-sm font-medium text-gray-700 mb-1">Summary</label>
                 <textarea
                     id="summary"
-                    name="summary"
-                    value={formData.summary}
-                    onChange={handleChange}
+                    value={summary}
+                    onChange={(e) => setSummary(e.target.value)}
                     required
                     rows="3"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 ></textarea>
             </div>
             <div>
-                <label htmlFor="body" className="block text-sm font-medium text-gray-700">Body</label>
+                <label htmlFor="body" className="block text-sm font-medium text-gray-700 mb-1">Body</label>
                 <textarea
                     id="body"
-                    name="body"
-                    value={formData.body}
-                    onChange={handleChange}
+                    value={body}
+                    onChange={(e) => setBody(e.target.value)}
                     required
-                    rows="8"
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    rows="6"
+                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 ></textarea>
             </div>
             <div>
-                <label htmlFor="author" className="block text-sm font-medium text-gray-700">Author</label>
+                <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">Author</label>
                 <input
                     type="text"
                     id="author"
-                    name="author"
-                    value={formData.author}
-                    onChange={handleChange}
+                    value={author}
+                    onChange={(e) => setAuthor(e.target.value)}
                     required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
             </div>
             <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                 <select
                     id="category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleChange}
-                    required
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 >
                     <option value="Fintech">Fintech</option>
                     <option value="Economy">Economy</option>
@@ -167,38 +145,47 @@ const ArticleForm = ({ backendUrl, editingArticle, onSuccess }) => {
                 </select>
             </div>
             <div>
-                <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">Image URL</label>
+                <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
                 <input
                     type="url"
                     id="imageUrl"
-                    name="imageUrl"
-                    value={formData.imageUrl}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
             </div>
             <div>
-                <label htmlFor="publishedAt" className="block text-sm font-medium text-gray-700">Published Date</label>
+                <label htmlFor="publishedAt" className="block text-sm font-medium text-gray-700 mb-1">Published Date</label>
                 <input
                     type="date"
                     id="publishedAt"
-                    name="publishedAt"
-                    value={formData.publishedAt}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    value={publishedAt}
+                    onChange={(e) => setPublishedAt(e.target.value)}
+                    required
+                    className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
             </div>
 
-            {submitError && <p className="text-red-500 text-sm mt-2">{submitError}</p>}
-            {submitSuccess && <p className="text-green-500 text-sm mt-2">Operation successful!</p>}
+            {error && <div className="text-red-600 text-sm text-center">{error}</div>}
 
-            <button
-                type="submit"
-                disabled={submitting}
-                className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 disabled:opacity-50"
-            >
-                {submitting ? 'Submitting...' : (editingArticle ? 'Update Article' : 'Add Article')}
-            </button>
+            <div className="flex justify-end space-x-3">
+                {editingArticle && (
+                    <button
+                        type="button" // Important for cancel button
+                        onClick={onCancel}
+                        className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150"
+                    >
+                        Cancel Edit
+                    </button>
+                )}
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {loading ? 'Processing...' : (editingArticle ? 'Update Article' : 'Add Article')}
+                </button>
+            </div>
         </form>
     );
 };
