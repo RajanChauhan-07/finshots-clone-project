@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #f9fafb; /* equivalent to tailwind's bg-gray-50 */
+  font-family: 'Lora', serif; /* Default to serif */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', sans-serif; /* Headings use sans-serif */
+}
+
+/* Custom styles for the article body to refine typography plugin defaults */
+.article-body h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-top: 2em;
+    margin-bottom: 1em;
+}
+
+.article-body p {
+    line-height: 1.8;
+    margin-bottom: 1.5em;
+}
+
+.article-body a {
+    color: #2563eb; /* blue-600 */
+    text-decoration: underline;
+}
+
+.article-body a:hover {
+    color: #1d4ed8; /* blue-700 */
+}
